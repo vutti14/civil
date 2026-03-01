@@ -1,7 +1,7 @@
 {
   "name": "rabbiz-structural-ultra",
-  "version": "4.0.0",
-  "description": "RABBiZ Structural Engineering Calculator - 25 AI Features",
+  "version": "5.0.0",
+  "description": "RABBiZ Structural Engineering Calculator - 25 AI Features - Light/Dark Mode",
   "private": true,
   "scripts": {
     "dev": "vite",
