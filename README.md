@@ -1,9 +1,9 @@
-# 🏗️ RABBiZ Structural ULTRA
+# 🏗️ RABBiZ Structural MEGA
 
-> ระบบคำนวณโครงสร้างอาคารอัจฉริยะ — 15 AI Features สำหรับวิศวกรโยธา
+> ระบบคำนวณโครงสร้างอาคารอัจฉริยะ — 25 AI Features สำหรับวิศวกรโยธา
 
-![Version](https://img.shields.io/badge/version-3.0.0-gold)
-![AI Features](https://img.shields.io/badge/AI%20Features-15-green)
+![Version](https://img.shields.io/badge/version-4.0.0-gold)
+![AI Features](https://img.shields.io/badge/AI%20Features-25-green)
 ![Standard](https://img.shields.io/badge/มาตรฐาน-มยผ.%2F%20วสท.-blue)
 
 ## ✨ Features
@@ -13,7 +13,7 @@
 - รองรับทั้งโครงสร้างเหล็ก (Steel) และคอนกรีตเสริมเหล็ก (RC)
 - คำนวณ น้ำหนักบรรทุก, คาน, เสา, พื้น, ฐานราก, BOQ, ราคา
 
-### 🤖 15 AI-Powered Features
+### 🤖 25 AI-Powered Features
 
 | # | Feature | Description |
 |---|---------|-------------|
@@ -32,6 +32,16 @@
 | 13 | 📋 **AI QC Checklist** | รายการตรวจสอบงานก่อสร้าง + Hold Points |
 | 14 | 💰 **AI ต้นทุนละเอียด** | แยกต้นทุนรายหมวด + แนะนำประหยัด |
 | 15 | 🎤 **AI Presentation** | เนื้อหานำเสนอลูกค้า + FAQ |
+| 16 | 🔬 **AI FEA** | Simplified Finite Element — Stress, Deflection, Utilization |
+| 17 | 🏚️ **AI Progressive Collapse** | GSA Alternate Path — ถอดเสา วิเคราะห์พังลุกลาม |
+| 18 | 🌪️ **AI Wind Pro** | มยผ.1311 — Cp ทุกด้าน, Cladding Design |
+| 19 | 🔥 **AI Fire Resistance** | อัตราทนไฟ, Cover, Protection ตาม Eurocode |
+| 20 | 💪 **AI Rebar Detailing** | เหล็กเสริมละเอียด — ทาบ, งอ, ระยะห่าง ACI318 |
+| 21 | 📊 **AI Load Path** | ติดตามแรงจากหลังคาถึงฐานรากทุก Node |
+| 22 | 🏗️ **AI Retrofit** | เสริมกำลัง FRP, Steel Jacket, Carbon Fiber |
+| 23 | 🎯 **AI Value Engineering** | ทดแทนวัสดุ เปลี่ยนระบบ ลดต้นทุนฉลาด |
+| 24 | 🧪 **AI Material Testing** | แผนทดสอบวัสดุ ตัวอย่าง เกณฑ์ ASTM/TIS |
+| 25 | 🌊 **AI Multi-Hazard** | แผ่นดินไหว+ลม+น้ำท่วม+ไฟ รวมวิเคราะห์ |
 
 ## 🚀 Quick Start
 
