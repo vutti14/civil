@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // ═══════════════════════════════════════════════════════════════
 // THEME SYSTEM — Light & Dark
@@ -51,36 +51,37 @@ const RB={"SD40":4000,"SD50":5000};
 // ═══════════════════════════════════════════════════════════════
 function calc(p){
   const bt=BT.find(b=>b.id===p.type),fl=bt.fl,ll=LL[p.liveType]||300;
-  const rDL=p.struct==="steel"?25:60,rLL=30,rT=rDL+rLL,fDL=p.slab*24+210,fT=fDL+ll;
-  const nF=Math.floor(p.length/p.spacing)+1,nC=nF*2,area=p.width*p.length,tArea=area*(fl===2?2:1);
+  const sp=Math.max(1,p.spacing||6),w=Math.max(1,p.width||12),ln=Math.max(1,p.length||24),eh=Math.max(2,p.eaveH||6),sl=Math.max(8,p.slab||12);
+  const rDL=p.struct==="steel"?25:60,rLL=30,rT=rDL+rLL,fDL=sl*24+210,fT=fDL+ll;
+  const nF=Math.floor(ln/sp)+1,nC=nF*2,area=w*ln,tArea=area*(fl===2?2:1);
   let beam=null,col=null,bM=0,bV=0,cP=0;
   if(p.struct==="steel"){
-    const w=(rT*p.spacing)/100,L=p.width*100;bM=w*L*L/8;bV=w*L/2;const Sr=bM/(0.66*2500);
+    const wt=(rT*sp)/100,L=w*100;bM=wt*L*L/8;bV=wt*L/2;const Sr=bM/(0.66*2500);
     for(const s of SB){const S=s.Ix*2/s.d;if(S>=Sr){beam={...s,Sr:Sr.toFixed(1),Sp:S.toFixed(1)};break;}}
     if(!beam)beam={...SB[SB.length-1],warn:1};
-    cP=(rT*p.width*p.spacing/2)*1.1;if(fl===2)cP+=fT*(p.width/2)*p.spacing*1.1;
+    cP=(rT*w*sp/2)*1.1;if(fl===2)cP+=fT*(w/2)*sp*1.1;
     const Ar=cP/(0.6*2500);
-    for(const s of SC){if(s.A>=Ar){col={...s,Ar:Ar.toFixed(1),sl:(p.eaveH*100/Math.sqrt(s.Ix/s.A)).toFixed(1)};break;}}
+    for(const s of SC){if(s.A>=Ar){col={...s,Ar:Ar.toFixed(1),sl:(eh*100/Math.sqrt(s.Ix/s.A)).toFixed(1)};break;}}
     if(!col)col={...SC[SC.length-1],warn:1};
   }
   let rcB=null,rcC=null,rcS=null;const fc=CONC[p.conc]||240,fy=RB[p.rebar]||4000;
   if(p.struct==="concrete"||fl===2){
-    const sW=1.4*(p.slab*24+110)+1.7*ll,sL=Math.min(p.spacing,p.width/2)*100,sM=(sW/100)*sL*sL/10,sD=p.slab-3,sA=sM/(0.9*fy*0.9*sD);
-    rcS={t:p.slab,Mu:(sM/1e5).toFixed(2),As:sA.toFixed(2),bar:sA<3?"DB12@200":sA<5?"DB12@150":sA<7?"DB16@200":"DB16@150"};
-    const bSp=p.width*100/2,bW=(1.4*(fDL+50)+1.7*ll)*p.spacing/100,bMu=bW*bSp*bSp/8;
-    const bW2=Math.max(20,Math.round(bSp/20/5)*5),bD=Math.max(30,Math.round(bSp/12/5)*5),bAs=bMu/(0.9*fy*0.9*(bD-5));
+    const sW=1.4*(sl*24+110)+1.7*ll,sL=Math.min(sp,w/2)*100,sM=(sW/100)*sL*sL/10,sD=Math.max(1,sl-3),sA=sM/(0.9*fy*0.9*sD);
+    rcS={t:sl,Mu:(sM/1e5).toFixed(2),As:sA.toFixed(2),bar:sA<3?"DB12@200":sA<5?"DB12@150":sA<7?"DB16@200":"DB16@150"};
+    const bSp=w*100/2,bW=(1.4*(fDL+50)+1.7*ll)*sp/100,bMu=bW*bSp*bSp/8;
+    const bW2=Math.max(20,Math.round(bSp/20/5)*5),bD=Math.max(30,Math.round(bSp/12/5)*5),bAs=bMu/(0.9*fy*0.9*Math.max(1,bD-5));
     rcB={w:bW2,d:bD,Mu:(bMu/1e5).toFixed(2),As:bAs.toFixed(2),bar:bAs<8?"3-DB20":bAs<12?"4-DB20":"4-DB25",stir:"DB10@150"};
-    const cPu=fl===2?(1.4*(fDL+rDL)+1.7*(ll+rLL))*(p.width/2)*p.spacing*2:(1.4*(fDL+rDL)+1.7*(ll+rLL))*(p.width/2)*p.spacing;
-    const cA=cPu/(0.65*(0.85*fc/10+0.02*fy)),cSz=Math.max(20,Math.ceil(Math.sqrt(cA)/5)*5);
+    const cPu=fl===2?(1.4*(fDL+rDL)+1.7*(ll+rLL))*(w/2)*sp*2:(1.4*(fDL+rDL)+1.7*(ll+rLL))*(w/2)*sp;
+    const cA=cPu/(0.65*(0.85*fc/10+0.02*fy)),cSz=Math.max(20,Math.ceil(Math.sqrt(Math.max(0,cA))/5)*5);
     rcC={size:`${cSz}x${cSz}`,Pu:(cPu/1000).toFixed(1),bar:cSz<=25?"4-DB16":cSz<=30?"4-DB20":"8-DB25"};
   }
   const fL=p.struct==="steel"?(cP/1000):(rcC?parseFloat(rcC.Pu)/1.5:10);
-  const fSz=Math.max(1,Math.ceil(Math.sqrt(fL/10)*10)/10),fDp=Math.max(0.3,Math.round(fSz*0.3*10)/10);
+  const fSz=Math.max(1,Math.ceil(Math.sqrt(Math.max(0.1,fL/10))*10)/10),fDp=Math.max(0.3,Math.round(fSz*0.3*10)/10);
   const found={load:fL.toFixed(1),size:`${fSz.toFixed(1)}x${fSz.toFixed(1)}`,depth:fDp.toFixed(1),type:fL>30?"เสาเข็ม":"ฐานรากแผ่"};
-  const stW=p.struct==="steel"?((beam?beam.w*p.width*nF:0)+(col?col.w*p.eaveH*nC:0)):0;
+  const stW=p.struct==="steel"?((beam?beam.w*w*nF:0)+(col?col.w*eh*nC:0)):0;
   const rate=p.struct==="steel"?(p.type==="warehouse"?5500:p.type==="showroom"?7000:8000):(fl===2?12000:9000);
   return{info:{...bt},loads:{rDL,rLL,rT,fDL:fl===2?fDL:null,ll,fT:fl===2?fT:null},
-    beam,col,rcB,rcC,rcS:fl===2?rcS:null,found,bM:(bM/1e5).toFixed(2),bV:(bV/1e3).toFixed(2),cP:(cP/1e3).toFixed(2),
+    beam,col,rcB,rcC,rcS,found,bM:(bM/1e5).toFixed(2),bV:(bV/1e3).toFixed(2),cP:(cP/1e3).toFixed(2),
     qty:{nF,nC,stW:stW.toFixed(0),area,tArea},cost:{rate,total:tArea*rate,totalM:(tArea*rate/1e6).toFixed(2)},params:p};
 }
 
@@ -90,14 +91,18 @@ function calc(p){
 async function ai(msgs,sys){
   try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3500,system:sys||"คุณเป็นวิศวกรโครงสร้างระดับผู้เชี่ยวชาญพิเศษชาวไทย ตอบภาษาไทย อ้างอิง มยผ./วสท./ACI318/AISC360 กระชับแม่นยำ",messages:msgs})});
+    if(!r.ok){const e=await r.text().catch(()=>"");return`Error ${r.status}: ${e||r.statusText}`;}
     const d=await r.json();return d.content?.map(b=>b.text||"").join("\n")||"ไม่สามารถประมวลผลได้";}catch(e){return"Error: "+e.message;}}
 async function aiJ(prompt,sys){const r=await ai([{role:"user",content:prompt}],sys||"ตอบ JSON เท่านั้น ไม่มี markdown backticks ไม่มี preamble");
+  if(r.startsWith("Error"))return{error:1,raw:r};
   try{return JSON.parse(r.replace(/```json?|```/g,"").trim());}catch{return{error:1,raw:r};}}
 async function aiV(b64,type,prompt){
   try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:2000,system:"วิศวกรโครงสร้าง อ่านแบบก่อสร้าง ตอบ JSON เท่านั้น",
     messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:type,data:b64}},{type:"text",text:prompt}]}]})});
-    const d=await r.json();return JSON.parse((d.content?.map(b=>b.text||"").join("\n")||"{}").replace(/```json?|```/g,"").trim());}catch{return{error:1};}}
+    if(!r.ok)return{error:1,raw:`Error ${r.status}`};
+    const d=await r.json();const txt=(d.content?.map(b=>b.text||"").join("\n")||"{}").replace(/```json?|```/g,"").trim();
+    return JSON.parse(txt);}catch(e){return{error:1,raw:e.message};}}
 
 function ctxStr(r,p){if(!r)return"";const bt=BT.find(b=>b.id===p.type);
   return`[${bt.l} ${p.width}x${p.length}m สูง${p.eaveH}m ${p.struct} LL=${LL[p.liveType]}kg/m² ${r.beam?`คาน=${r.beam.n} `:""}${r.col?`เสา=${r.col.n} `:""}${r.rcB?`คานRC=${r.rcB.w}x${r.rcB.d}cm `:""}${r.rcC?`เสาRC=${r.rcC.size}cm `:""}ฐาน=${r.found.size}m(${r.found.type}) เฟรม=${r.qty.nF} เสา=${r.qty.nC} ≈฿${r.cost.totalM}M]`;}
@@ -149,27 +154,30 @@ export default function App(){
     if(id==="showroom"){setW(15);setL(30);setH(5);setSt("steel");setLT("showroom");setSp(6);}
     if(id==="one_story"){setW(10);setL(20);setH(3.5);setSt("concrete");setLT("commercial");setSp(5);}
     if(id==="two_story"){setW(10);setL(20);setH(3.5);setSt("concrete");setLT("commercial");setSp(5);}};
-  const doCalc=()=>{setR(calc(p));setTab("loads");};
-  const applyP=(np)=>{if(np.type)chgType(np.type);if(np.width)setW(np.width);if(np.length)setL(np.length);if(np.eaveH)setH(np.eaveH);if(np.slope)setSl(np.slope);if(np.spacing)setSp(np.spacing);if(np.struct)setSt(np.struct);if(np.liveType)setLT(np.liveType);if(np.slab)setSlab(np.slab);setTimeout(()=>setPage("calc"),300);};
+  const doCalc=()=>{setR(calc(p));setTab("loads");setAI({});};
+  const applyP=(np)=>{if(np.type)chgType(np.type);if(np.width)setW(parseFloat(np.width)||width);if(np.length)setL(parseFloat(np.length)||length);if(np.eaveH)setH(parseFloat(np.eaveH)||eaveH);if(np.slope)setSl(parseFloat(np.slope)||slope);if(np.spacing)setSp(parseFloat(np.spacing)||spacing);if(np.struct)setSt(np.struct);if(np.liveType)setLT(np.liveType);if(np.slab)setSlab(parseFloat(np.slab)||slab);setTimeout(()=>{setPage("calc");},300);};
 
   // CHAT
-  const sendChat=async()=>{if(!chatIn.trim())return;const u=chatIn.trim();setCI("");setCL(true);
+  const sendChat=async()=>{if(!chatIn.trim()||chatLd)return;const u=chatIn.trim();setCI("");setCL(true);
     const nm=[...chatMsgs,{role:"user",content:u}];setCM(nm);
-    const r=await ai(nm.map((m,i)=>({role:m.role,content:m.content+(m.role==="user"&&i===nm.length-1?cx():"")})));
-    setCM([...nm,{role:"assistant",content:r}]);setCL(false);};
+    try{const r=await ai(nm.map((m,i)=>({role:m.role,content:m.content+(m.role==="user"&&i===nm.length-1?cx():"")})));
+      setCM([...nm,{role:"assistant",content:r}]);}catch(e){setCM([...nm,{role:"assistant",content:"เกิดข้อผิดพลาด: "+e.message}]);}finally{setCL(false);}};
   useEffect(()=>{chatE.current?.scrollIntoView({behavior:"smooth"});},[chatMsgs]);
 
   // NLP
   const doNlp=async()=>{if(!nlpTx.trim())return;setNlpLd(true);setNlpR(null);
-    setNlpR(await aiJ(`จากข้อความ:"${nlpTx}" แยก JSON:{type,width,length,eaveH,slope,spacing,struct,liveType,slab,summary,assumptions}`));setNlpLd(false);};
+    try{setNlpR(await aiJ(`จากข้อความ:"${nlpTx}" แยก JSON:{type,width,length,eaveH,slope,spacing,struct,liveType,slab,summary,assumptions}`));}catch(e){setNlpR({error:1,raw:e.message});}finally{setNlpLd(false);}};
   // Reader
   const handleFile=(e)=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=(ev)=>{setRdPrev(ev.target.result);setRdImg({b64:ev.target.result.split(",")[1],type:f.type});};r.readAsDataURL(f);};
-  const doRead=async()=>{if(!rdImg)return;setRdLd(true);setRdR(null);setRdR(await aiV(rdImg.b64,rdImg.type,`อ่านแบบก่อสร้าง JSON:{type,width,length,eaveH,slope,spacing,struct,liveType,slab,summary,confidence,notes}`));setRdLd(false);};
+  const doRead=async()=>{if(!rdImg)return;setRdLd(true);setRdR(null);
+    try{setRdR(await aiV(rdImg.b64,rdImg.type,`อ่านแบบก่อสร้าง JSON:{type,width,length,eaveH,slope,spacing,struct,liveType,slab,summary,confidence,notes}`));}catch(e){setRdR({error:1,raw:e.message});}finally{setRdLd(false);}};
   // PDF
-  const doPDF=async()=>{if(!results)return;setPdfLd(true);const sum=await ai([{role:"user",content:`สรุปการคำนวณโครงสร้าง 3 ย่อหน้า: ${cx()}`}]);
+  const doPDF=async()=>{if(!results||!bt)return;setPdfLd(true);
+    try{const sum=await ai([{role:"user",content:`สรุปการคำนวณโครงสร้าง 3 ย่อหน้า: ${cx()}`}]);
     const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>RABBiZ Report</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Sarabun',sans-serif;font-size:11pt;color:#2c2416;line-height:1.8;padding:40px 50px;max-width:800px;margin:0 auto}.hdr{text-align:center;border-bottom:3px solid #c8960c;padding-bottom:20px;margin-bottom:30px}.logo{font-size:24pt;font-weight:700;color:#c8960c}h2{font-size:13pt;border-left:4px solid #c8960c;padding-left:12px;margin:24px 0 10px}table{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:10pt}th{background:#2c2416;color:#fff;padding:7px}td{padding:6px;border-bottom:1px solid #e2ddd3}.hl{color:#c8960c;font-weight:700}.box{background:#faf8f4;border:1px solid #e2ddd3;border-radius:8px;padding:14px;margin:14px 0}</style></head><body><div class="hdr"><div class="logo">RABBiZ</div><h1 style="font-size:16pt">รายงานการคำนวณโครงสร้าง</h1><div style="font-size:10pt;color:#8c7e6a">วันที่: ${new Date().toLocaleDateString('th-TH')} | SC-${Date.now().toString(36).toUpperCase()}</div></div><h2>ข้อมูลโครงการ</h2><table><tr><td>อาคาร</td><td class="hl">${bt.l} ${width}x${length}m สูง${eaveH}m</td></tr><tr><td>โครงสร้าง</td><td>${struct}</td></tr><tr><td>พื้นที่</td><td class="hl">${results.qty.tArea}m²</td></tr></table>${results.beam?`<h2>คานเหล็ก</h2><table><tr><td>${results.beam.n}</td><td>M=${results.bM}t·m</td></tr></table>`:""}${results.col?`<h2>เสาเหล็ก</h2><table><tr><td>${results.col.n}</td><td>P=${results.cP}t</td></tr></table>`:""}${results.rcB?`<h2>คาน คสล.</h2><table><tr><td>${results.rcB.w}x${results.rcB.d}cm</td><td>${results.rcB.bar}</td></tr></table>`:""}${results.rcC?`<h2>เสา คสล.</h2><table><tr><td>${results.rcC.size}cm</td><td>${results.rcC.bar}</td></tr></table>`:""}
     <h2>ฐานราก</h2><table><tr><td>${results.found.type} ${results.found.size}m</td><td>P=${results.found.load}t</td></tr></table><h2>ราคา</h2><table><tr><td>${results.qty.tArea}m² × ${results.cost.rate.toLocaleString()}฿/m²</td><td class="hl">= ฿${results.cost.totalM}M</td></tr></table><h2>สรุป AI</h2><div class="box">${sum.replace(/\n/g,'<br>')}</div><div style="margin-top:30px;padding:12px;background:#fdf0f0;border:1px solid #e2b0b0;border-radius:6px;font-size:9pt;color:#8c7e6a">⚠️ Preliminary Design — ต้องตรวจสอบโดย กว.</div><div style="margin-top:24px;text-align:center;font-size:9pt;color:#b0a48e;border-top:1px solid #e2ddd3;padding-top:14px">RABBiZ Structural MEGA v5.0<br><br><div style="display:flex;justify-content:space-around"><div>ลงชื่อ _______________<br>ผู้คำนวณ</div><div>ลงชื่อ _______________<br>ผู้ตรวจสอบ กว.</div></div></div></body></html>`;
-    const blob=new Blob([html],{type:"text/html"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`RABBiZ_Report_${new Date().toISOString().slice(0,10)}.html`;a.click();URL.revokeObjectURL(url);setPdfLd(false);};
+    const blob=new Blob([html],{type:"text/html"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`RABBiZ_Report_${new Date().toISOString().slice(0,10)}.html`;a.click();URL.revokeObjectURL(url);
+    }catch(e){console.error("PDF Error:",e);}finally{setPdfLd(false);}};
 
   // ═══════════════════════════════════════════════════════════════
   // 20 AI FEATURES
@@ -198,7 +206,7 @@ export default function App(){
     presentation:{t:"Presentation ลูกค้า",d:"สไลด์ สรุปผู้บริหาร FAQ",ic:"🎤",c:"p",run:async(c)=>await aiJ(`Presentation: ${c}\nJSON:{title,slides:[{slide_number,title,bullet_points:[],speaker_notes}],executive_summary,key_selling_points:[],faq:[{question,answer}],next_steps:[]}`)},
   };
 
-  const runF=async(k)=>{if(!results||getAIS(k).ld)return;setAIS(k,true);const r=await features[k].run(cx());setAI(p=>({...p,[k]:{ld:false,r}}));};
+  const runF=async(k)=>{if(!results||getAIS(k).ld)return;setAIS(k,true);try{const r=await features[k].run(cx());setAI(p=>({...p,[k]:{ld:false,r}}));}catch(e){setAI(p=>({...p,[k]:{ld:false,r:{error:1,raw:e.message}}}));}};
 
   // NAV categories
   const navGroups=[
@@ -215,7 +223,7 @@ export default function App(){
   // ═══════════════════════════════════════════════════════════════
   const sI={width:"100%",padding:"9px 12px",background:T.inputBg,border:`1.5px solid ${T.bd}`,borderRadius:8,color:T.t,fontSize:13,fontFamily:M,outline:"none",boxSizing:"border-box",transition:"border-color .15s"};
 
-  const Inp=({l,u,v,set,mn,mx,st=0.5})=><div style={{marginBottom:10}}><label style={{display:"block",fontSize:11,color:T.d,marginBottom:3,fontFamily:F,fontWeight:600}}>{l}</label><div style={{display:"flex",gap:6,alignItems:"center"}}><input type="number" value={v} onChange={e=>set(parseFloat(e.target.value)||0)} min={mn} max={mx} step={st} style={{...sI,flex:1}}/>{u&&<span style={{fontSize:10,color:T.dL,fontWeight:600}}>{u}</span>}</div></div>;
+  const Inp=({l,u,v,set,mn,mx,st=0.5})=><div style={{marginBottom:10}}><label style={{display:"block",fontSize:11,color:T.d,marginBottom:3,fontFamily:F,fontWeight:600}}>{l}</label><div style={{display:"flex",gap:6,alignItems:"center"}}><input type="number" value={v} onChange={e=>{const n=parseFloat(e.target.value);set(isNaN(n)?mn||0:n);}} min={mn} max={mx} step={st} style={{...sI,flex:1}}/>{u&&<span style={{fontSize:10,color:T.dL,fontWeight:600}}>{u}</span>}</div></div>;
   const Sel=({l,v,set,opts})=><div style={{marginBottom:10}}><label style={{display:"block",fontSize:11,color:T.d,marginBottom:3,fontFamily:F,fontWeight:600}}>{l}</label><select value={v} onChange={e=>set(e.target.value)} style={{...sI,cursor:"pointer"}}>{opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}</select></div>;
 
   const Card=({t,ic,c,ch,noPad})=>{const cl=T[c]||T.a;return<div style={{background:T.s1,borderRadius:12,border:`1.5px solid ${T.bd}`,overflow:"hidden",marginBottom:12,boxShadow:T.shadow,transition:"all .2s"}}>
@@ -224,9 +232,10 @@ export default function App(){
 
   const Row=({l,v,u,h})=><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:`1px solid ${T.bd}30`}}><span style={{fontSize:12,color:T.d}}>{l}</span><span style={{fontSize:13,fontWeight:h?700:500,color:h?T.a:T.t,fontFamily:M}}>{v}{u&&<span style={{fontSize:10,color:T.dL,marginLeft:3}}>{u}</span>}</span></div>;
   const PF=({ok,tx})=><div style={{marginTop:8,padding:8,borderRadius:8,textAlign:"center",fontSize:12,fontWeight:700,background:ok?T.okBg:T.eBg,color:ok?T.ok:T.e}}>{ok?"✓":"✗"} {tx}</div>;
-  const Btn=({c,full,ch,onClick,dis,outline})=>{const cl=T[c]||c||T.a;return<button onClick={onClick} disabled={dis} style={{padding:full?"11px":"8px 16px",borderRadius:8,border:outline?`2px solid ${cl}`:"none",cursor:dis?"not-allowed":"pointer",background:outline?"transparent":cl,color:outline?cl:(c==="a"||c==="w"||c==="ok"||c===T.a)?"#fff":"#fff",fontSize:13,fontWeight:700,fontFamily:F,width:full?"100%":"auto",opacity:dis?.5:1,transition:"all .15s"}}>{ch}</button>;};
+  const Btn=({c,full,ch,onClick,dis,outline})=>{const cl=T[c]||c||T.a;const isDark=c==="a"||c==="w"||c==="aL";const txtC=outline?cl:isDark?"#1a1200":"#fff";return<button onClick={onClick} disabled={dis} style={{padding:full?"11px":"8px 16px",borderRadius:8,border:outline?`2px solid ${cl}`:"none",cursor:dis?"not-allowed":"pointer",background:outline?"transparent":cl,color:txtC,fontSize:13,fontWeight:700,fontFamily:F,width:full?"100%":"auto",opacity:dis?.5:1,transition:"all .15s"}}>{ch}</button>;};
   const Ld=({t})=><div style={{textAlign:"center",padding:30}}><div style={{width:36,height:36,border:`3px solid ${T.bd}`,borderTop:`3px solid ${T.a}`,borderRadius:"50%",margin:"0 auto",animation:"spin .8s linear infinite"}}/><div style={{fontSize:12,color:T.d,marginTop:10}}>{t}</div></div>;
-  const AIR=({data})=>{if(!data)return null;if(data.error)return<div style={{fontSize:12,color:T.d,whiteSpace:"pre-wrap",padding:12,background:T.s2,borderRadius:8}}>{data.raw||"เกิดข้อผิดพลาด"}</div>;
+  const AIR=({data})=>{if(!data)return null;if(data.error)return<div style={{fontSize:12,whiteSpace:"pre-wrap",padding:12,background:T.eBg,borderRadius:8}}><span style={{fontWeight:700,color:T.e}}>⚠️ Error: </span><span style={{color:T.d}}>{data.raw||"เกิดข้อผิดพลาด กรุณาลองใหม่"}</span></div>;
+    if(typeof data==="string")return<div style={{fontSize:13,color:T.t,whiteSpace:"pre-wrap",lineHeight:1.8}}>{data}</div>;
     return<pre style={{whiteSpace:"pre-wrap",fontFamily:F,fontSize:12,color:T.t,lineHeight:1.9,margin:0}}>{rJ(data)}</pre>;};
 
   // Stat box
@@ -246,7 +255,7 @@ export default function App(){
       `}</style>
 
       {/* ═══ SIDEBAR ═══ */}
-      <div style={{width:sideOpen?220:56,minHeight:"100vh",background:T.navBg,borderRight:`1px solid ${T.bd}30`,
+      <div style={{width:sideOpen?220:56,height:"100vh",background:T.navBg,borderRight:`1px solid ${T.bd}30`,
         display:"flex",flexDirection:"column",transition:"width .25s ease",position:"sticky",top:0,zIndex:20,overflow:"hidden",flexShrink:0}}>
 
         {/* Logo & toggle */}
@@ -336,6 +345,7 @@ export default function App(){
                 {results.col&&<Card t="เสาเหล็ก" ic="🏛️" c="a" ch={<><Row l="หน้าตัด" v={results.col.n} h/><Row l="P" v={results.cP} u="t"/><Row l="KL/r" v={results.col.sl}/><PF ok={results.col.A>=parseFloat(results.col.Ar)} tx="Column Area Check"/></>}/>}
                 {results.rcB&&<Card t="คาน คสล." ic="📐" c="p" ch={<><Row l="ขนาด" v={`${results.rcB.w}×${results.rcB.d}`} u="cm" h/><Row l="Mu" v={results.rcB.Mu} u="t·m"/><Row l="เหล็ก" v={results.rcB.bar} h/></>}/>}
                 {results.rcC&&<Card t="เสา คสล." ic="🏛️" c="p" ch={<><Row l="ขนาด" v={results.rcC.size} u="cm" h/><Row l="Pu" v={results.rcC.Pu} u="t"/><Row l="เหล็ก" v={results.rcC.bar} h/></>}/>}
+                {results.rcS&&<Card t="พื้น คสล." ic="▦" c="b" ch={<><Row l="หนา" v={results.rcS.t} u="cm" h/><Row l="Mu" v={results.rcS.Mu} u="t·m"/><Row l="As" v={results.rcS.As} u="cm²"/><Row l="เหล็ก" v={results.rcS.bar} h/></>}/>}
               </div>}
               {tab==="found"&&<Card t="ฐานราก" ic="🧱" c="a" ch={<><Row l="ประเภท" v={results.found.type} h/><Row l="ขนาด" v={results.found.size} u="m" h/><Row l="ลึก" v={results.found.depth} u="m"/><Row l="น้ำหนัก" v={results.found.load} u="t"/></>}/>}
               {tab==="boq"&&<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))",gap:12}}>
@@ -355,6 +365,7 @@ export default function App(){
                   <button key={i} onClick={()=>setNlpTx(ex)} style={{padding:"6px 10px",borderRadius:6,border:`1.5px solid ${T.bd}`,background:"transparent",color:T.d,fontSize:11,cursor:"pointer",fontFamily:F}}>{ex}</button>)}
               </div></>}/>
             {nlpR&&!nlpR.error&&<Card t="ผลวิเคราะห์" ic="✨" c="ok" ch={<><div style={{fontSize:13,marginBottom:10,lineHeight:1.8}}>{nlpR.summary}</div>{nlpR.assumptions&&<div style={{fontSize:12,color:T.w,background:T.wBg,padding:10,borderRadius:8,marginBottom:10}}>💡 {nlpR.assumptions}</div>}<Btn c="ok" full ch="✅ ใช้ค่านี้ → ไปคำนวณ" onClick={()=>applyP(nlpR)}/></>}/>}
+            {nlpR&&nlpR.error&&<Card t="เกิดข้อผิดพลาด" ic="⚠️" c="e" ch={<div style={{fontSize:12,color:T.e,whiteSpace:"pre-wrap"}}>{nlpR.raw||"ไม่สามารถวิเคราะห์ได้ กรุณาลองใหม่"}</div>}/>}
           </div>}
 
           {/* ═══ READER ═══ */}
@@ -366,11 +377,12 @@ export default function App(){
                   <div><div style={{fontSize:36,marginBottom:6}}>📎</div><div style={{fontSize:13,color:T.d}}>คลิกหรือลากไฟล์มาวางที่นี่</div><div style={{fontSize:11,color:T.dL,marginTop:4}}>PNG, JPG, PDF</div></div>}
               </div>
               {rdImg&&<Btn c="b" full ch={rdLd?"กำลังอ่านแบบ...":"🔍 AI อ่านแบบ"} onClick={doRead} dis={rdLd}/>}</>}/>
-            {rdR&&!rdR.error&&<Card t="ผลอ่านแบบ" ic="✨" c="ok" ch={<><div style={{fontSize:13,marginBottom:10,lineHeight:1.8}}>{rdR.summary}</div><Btn c="ok" full ch="✅ ใช้ค่านี้ → ไปคำนวณ" onClick={()=>applyP(rdR)}/></>}/>}
+            {rdR&&!rdR.error&&<Card t="ผลอ่านแบบ" ic="✨" c="ok" ch={<><div style={{fontSize:13,marginBottom:10,lineHeight:1.8}}>{rdR.summary}</div>{rdR.confidence&&<div style={{fontSize:11,color:T.b,marginBottom:6}}>ความมั่นใจ: {rdR.confidence}</div>}<Btn c="ok" full ch="✅ ใช้ค่านี้ → ไปคำนวณ" onClick={()=>applyP(rdR)}/></>}/>}
+            {rdR&&rdR.error&&<Card t="เกิดข้อผิดพลาด" ic="⚠️" c="e" ch={<div style={{fontSize:12,color:T.e}}>ไม่สามารถอ่านแบบได้ กรุณาลองอัปโหลดใหม่</div>}/>}
           </div>}
 
           {/* ═══ CHAT ═══ */}
-          {page==="chat"&&<div className="fi" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 80px)"}}>
+          {page==="chat"&&<div className="fi" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 140px)"}}>
             <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:8,padding:"8px 0"}}>
               {chatMsgs.length===0&&<div style={{textAlign:"center",padding:40,color:T.d}}>
                 <div style={{fontSize:40,marginBottom:10}}>🤖</div>
